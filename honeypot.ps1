@@ -29,9 +29,15 @@ function Specify-Password {
     <#
     .DESCRIPTION
     Create a password for the user according to length and complexity requirements
+    
+    Original Link to Password Creation:
+        author:
+            Paul (The SYSADMIN Channel)
+        link: 
+            https://thesysadminchannel.com/script-create-user-accounts-in-powershell/
     #>
 
-    # TOGGLE ME - in this case, the minimum length is 7 chars
+    # TOGGLE ME - the minimum length is 7 chars
     $PasswordLength =         7
 
     do {
