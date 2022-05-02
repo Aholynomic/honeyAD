@@ -37,14 +37,14 @@ function Specify-Password {
             https://thesysadminchannel.com/script-create-user-accounts-in-powershell/
     #>
 
-    # TOGGLE ME - the minimum length is 7 chars
+    # TOGGLE ME
     $PasswordLength =         7
 
     do {
 
         Write-Host
             $isGood = 0
-            $Password = Read-Host "Enter the Password: " -AsSecureString
+            $Password = Read-Host "Enter the Password " -AsSecureString
             $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
             $Complexity = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
  
@@ -85,11 +85,12 @@ function Specify-Password {
 function Create-Users {
     <#
     .DESCRIPTION
-    Creates the honey users.    
+    Creates the honey users.
     #>
 
-    $Domain =               $env:userdnsdomain
+    # TOGGLE ME 
     $OU =                   "DC=hast,DC=interal"
+    $Domain = $env:userdnsdomain
 
     ##############################################################################
 
@@ -97,49 +98,51 @@ function Create-Users {
     Write-Host 
     Write-Host "======== First User Attributes ========="
     Write-Host "- Domain Admin"
-    Write-Host "- Can't Logon to Any Workstations"
+    Write-Host "- Can't Logon to Any Workstations (Set Manually)"
     Write-Host "- AS-REP Roastable"
     Write-Host "- Password Never Expires"
     Write-Host 
 
-    $answer1 = Read-Host "Would you like to create this user (Y/N): "
+    $answer1 = Read-Host "Would you like to create this user (Y/N) "
 
     if ($answer1 -eq "Y" -Or $answer1 -eq "y") {
-        $FirstName = Read-Host "Enter First Name: "
-        $Surname = Read-Host "Enter Last Name: "
-        $Description = Read-Host "Enter the User's Description: "
+        $FirstName = Read-Host "Enter First Name "
+        $Surname = Read-Host "Enter Last Name "
+        $Description = "Created with secframe.com/badblood."
         $FullName = $FirstName + "_" + $Surname
+
+        # set capitalised to conform to naming conventions
         $FullName = $FullName.ToUpper()
         $LogonName = $FullName
         $Password = Specify-Password
-        $CombinedOU = "CN=Admin,CN=Tier 0,"+$OU
+        $CombinedOU = "OU=Tier 0,OU=Admin,"+$OU
         
         # create the user
-        New-ADUser -Name $FullName -GivenName $Firstname -Surname $Surname -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
+        New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
 
         # Make vulnerable to AS-REP Roasting by turning off
         # require kerberos pre-authentication
         Get-ADUser -Identity $FullName | Set-ADAccountControl -doesnotrequirepreauth $true
 
-        # Copy Group Membership from Specific User
-        Get-ADPrincipalGroupMembership -Identity "JACKLYN_GONZALES" | SELECT SamAccountName | ForEach-Object {Add-ADGroupMember -Identity $_.SamAccountName -Members $LogonName}
+        # Copy group membership from user in Domain Admin Group to created user
+        $GetGroups = Get-ADUser -Identity JACKLYN_GONZALEZ -Properties memberof | Select-Object -ExpandProperty memberof
+        $GetGroups | Add-ADGroupMember -Members $FullName
 
         Write-Host "======================================="
         Write-Host
         Write-Host "Firstname:                   $Firstname"
-        Write-Host "Lastname:                      $Surname"
-        Write-Host "Display Name:                 $FullName"
+        Write-Host "Lastname:                    $Surname"
+        Write-Host "Display Name:                $FullName"
         Write-Host "Logon Name:                  $LogonName"
-        Write-Host "OU:                         $CombinedOU"
-        Write-Host "Domain:                         $Domain"
-        Write-Host "Password:                     $Password"
-        Write-Host "Credential - Not Expire:            Yes"
-        Write-Host "Pre-Authentication:                  No"
-        Write-Host "Enabled:                            Yes"
-        # Set Auditing using GUI
-        Write-Host "Auditing:                (Set Manually)"
-        # Set Deny Logon using GUI
-        Write-Host "Deny Logon:              (Set Manually)"
+        Write-Host "OU:                          $CombinedOU"
+        Write-Host "Domain:                      $Domain"
+        Write-Host "Credential - Not Expire:     Yes"
+        Write-Host "Pre-Authentication:          No"
+        Write-Host "Enabled:                     Yes"
+
+        # Set Auditing and Deny Logon using GUI
+        Write-Host "Auditing:                    (Set Manually)"
+        Write-Host "Deny Logon:                  (Set Manually)"
         Write-Host
     }
 
@@ -149,196 +152,152 @@ function Create-Users {
     Write-Host 
     Write-Host "======== Second User Attributes ========="
     Write-Host "- Administrator"
-    Write-Host "- Can't Logon to Any Workstations"
+    Write-Host "- Can't Logon to Any Workstations (Set Manually)"
     Write-Host "- AS-REP Roastable"
     Write-Host "- Password Never Expires"
     Write-Host 
 
-    $answer2 = Read-Host "Would you like to create this user (Y/N): "
+    $answer2 = Read-Host "Would you like to create this user (Y/N) "
 
     if ($answer2 -eq "Y" -Or $answer2 -eq "y") {
-        $FirstName = Read-Host "Enter First Name: "
-        $Surname = Read-Host "Enter Last Name: "
-        $Description = Read-Host "Enter the User's Description: "
+        $FirstName = Read-Host "Enter First Name "
+        $Surname = Read-Host "Enter Last Name "
+        $Description = "Created with secframe.com/badblood."
         $FullName = $FirstName + "_" + $Surname
         $FullName = $FullName.ToUpper()
         $LogonName = $FullName
         $Password = Specify-Password
-        $CombinedOU = "CN=Admin,CN=Tier 1,"+$OU
+        $CombinedOU = "OU=Tier 1,OU=Admin,"+$OU
 
-        New-ADUser -Name $FullName -GivenName $Firstname -Surname $Surname -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
+        New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
         Get-ADUser -Identity $FullName | Set-ADAccountControl -doesnotrequirepreauth $true
-        Get-ADPrincipalGroupMembership -Identity "HOUSTON_LOWERY" | SELECT SamAccountName | ForEach-Object {Add-ADGroupMember -Identity $_.SamAccountName -Members $LogonName}
-
+        $GetGroups = Get-ADUser -Identity HOUSTON_LOWERY -Properties memberof | Select-Object -ExpandProperty memberof
+        $GetGroups | Add-ADGroupMember -Members $FullName
+        
         Write-Host "======================================="
         Write-Host
         Write-Host "Firstname:                   $Firstname"
-        Write-Host "Lastname:                      $Surname"
-        Write-Host "Display Name:                 $FullName"
+        Write-Host "Lastname:                    $Surname"
+        Write-Host "Display Name:                $FullName"
         Write-Host "Logon Name:                  $LogonName"
-        Write-Host "OU:                         $CombinedOU"
-        Write-Host "Domain:                         $Domain"
-        Write-Host "Password:                     $Password"
-        Write-Host "Credential - Not Expire:            Yes"
-        Write-Host "Pre-Authentication:                  No"
-        Write-Host "Enabled:                            Yes"
-        Write-Host "Auditing:                (Set Manually)"
-        Write-Host "Deny Logon:              (Set Manually)"
+        Write-Host "OU:                          $CombinedOU"
+        Write-Host "Domain:                      $Domain"
+        Write-Host "Credential - Not Expire:     Yes"
+        Write-Host "Pre-Authentication:          No"
+        Write-Host "Enabled:                     Yes"
+        Write-Host "Auditing:                    (Set Manually)"
+        Write-Host "Deny Logon:                  (Set Manually)"
         Write-Host
     }
 
     ##############################################################################
 
-    # create third user who is fake Administrator (built-in account)
+    # create third user who has full rights to 'NORBERT_WARD' user in Domain Controllers group
     Write-Host 
     Write-Host "======== Third User Attributes ========="
-    Write-Host "- Domain Admin who is Fake Administrator"
-    Write-Host
-
-    $answer3 = Read-Host "Would you like to create this user (Y/N): "
-
-    if ($answer3 -eq "Y" -Or $answer3 -eq "y") {
-        # have here grabbing the Administrator account and manipulate it
-        Write-Host "Changing Built-In Administator Details"
-        $FirstName = Read-Host "Enter First Name: "
-        $Surname = Read-Host "Enter Last Name: "
-        $FullName = $FirstName + "_" + $Surname
-        $FullName = $FullName.ToUpper()
-        
-        Set-ADUser "Administrator" -Surname $FullName -DisplayName $FullName -Description ""
-        Write-Host "Creating Fake Administrator in Place of Current Built-In Administrator"
-        Write-Host 
-
-        $Description = "Built-in account for administering the computer/domain."
-        $FullName = "Administrator"
-        $LogonName = $FullName
-        $Password = Specify-Password
-        $CombinedOU = "CN=Users,"+$OU
-        
-        New-ADUser -Name $FullName -GivenName $Firstname -Surname $Surname -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
-
-        Write-Host "======================================="
-        Write-Host
-        Write-Host "Display Name:                 $FullName"
-        Write-Host "Logon Name:                  $LogonName"
-        Write-Host "OU:                         $CombinedOU"
-        Write-Host "Domain:                         $Domain"
-        Write-Host "Password:                     $Password"
-        Write-Host "Credential - Not Expire:            Yes"
-        Write-Host "Pre-Authentication:                 Yes"
-        Write-Host "Enabled:                            Yes"
-        Write-Host "Auditing:                (Set Manually)"
-        Write-Host
-    }
-
-    
-
-    ##############################################################################
-
-    # create fourth user who has full rights to 'NORBERT_WARD' user in Domain Controllers group
-
-    Write-Host 
-    Write-Host "======== Fourth User Attributes ========="
     Write-Host "- Local User"
-    Write-Host "- Can't Logon to Any Workstations"
+    Write-Host "- Can't Logon to Any Workstations (Set Manually)"
     Write-Host "- Password Never Expires"
-    write-Host "- Password in Description"
+    write-Host "- Password in Description (Set Manually)"
     Write-Host "- Has Rights to User in Domain Controllers Group, Domain and GP Creator Owners"
     Write-Host 
 
-    $answer4 = Read-Host "Would you like to create this user (Y/N): "
+    $answer3 = Read-Host "Would you like to create this user (Y/N) "
 
-    if ($answer4 -eq "Y" -Or $answer4 -eq "y") {
-        $FirstName = Read-Host "Enter First Name: "
-        $Surname = Read-Host "Enter Last Name: "
+    if ($answer3 -eq "Y" -Or $answer3 -eq "y") {
+        $FirstName = Read-Host "Enter First Name "
+        $Surname = Read-Host "Enter Last Name "
         $FullName = $FirstName + "_" + $Surname
         $FullName = $FullName.ToUpper()
         $LogonName = $FullName
         $Password = Specify-Password
-        $Description = "Just so I don't forget my password is"+$Password
-        $CombinedOU = "CN=Stage,CN=BDE,CN=Test,"+$OU
+        $Description = "Just so I don't forget my password is"
+        $CombinedOU = "OU=Test,OU=BDE,OU=Stage,"+$OU
 
-        New-ADUser -Name $FullName -GivenName $Firstname -Surname $Surname -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
-        Get-ADPrincipalGroupMembership -Identity "SUSANNA_CAMPOS" | SELECT SamAccountName | ForEach-Object {Add-ADGroupMember -Identity $_.SamAccountName -Members $LogonName}
+        New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
+        $GetGroups = Get-ADUser -Identity SUSANNA_CAMPOS -Properties memberof | Select-Object -ExpandProperty memberof
+        $GetGroups | Add-ADGroupMember -Members $FullName
 
         Write-Host "======================================="
         Write-Host
         Write-Host "Firstname:                   $Firstname"
-        Write-Host "Lastname:                      $Surname"
-        Write-Host "Display Name:                 $FullName"
+        Write-Host "Lastname:                    $Surname"
+        Write-Host "Display Name:                $FullName"
         Write-Host "Logon Name:                  $LogonName"
-        Write-Host "OU:                         $CombinedOU"
-        Write-Host "Domain:                         $Domain"
-        Write-Host "Password:                     $Password"
-        Write-Host "Credential - Not Expire:            Yes"
-        Write-Host "Pre-Authentication:                 Yes"
-        Write-Host "Enabled:                            Yes"
-        Write-Host "Auditing:                (Set Manually)"
-        Write-Host "Deny Logon:              (Set Manually)"
+        Write-Host "OU:                          $CombinedOU"
+        Write-Host "Domain:                      $Domain"
+        Write-Host "Credential - Not Expire:     Yes"
+        Write-Host "Pre-Authentication:          Yes"
+        Write-Host "Enabled:                     Yes"
+        Write-Host "Auditing:                    (Set Manually)"
+        Write-Host "Deny Logon:                  (Set Manually)"
         Write-Host
     }
 
-    
-
     ##############################################################################
 
-    # create fifth user who is an Account Operator with Fake Password in Description
+    # create fourth user who is an Account Operator with Fake Password in Description
     Write-Host 
-    Write-Host "======== Fifth User Attributes ========="
+    Write-Host "======== Fourth User Attributes ========="
     Write-Host "- Account Operator"
     Write-Host "- Fake Password in Description"
     Write-Host "- Can Logon"
 
-    $answer5 = Read-Host "Would you like to create this user (Y/N): "
+    $answer4 = Read-Host "Would you like to create this user (Y/N) "
 
-    if ($answer5 -eq "Y" -Or $answer5 -eq "y") {
-        $FirstName = Read-Host "Enter First Name: "
-        $Surname = Read-Host "Enter Last Name: "
+    if ($answer4 -eq "Y" -Or $answer4 -eq "y") {
+        $FirstName = Read-Host "Enter First Name "
+        $Surname = Read-Host "Enter Last Name "
         $FullName = $FirstName + "_" + $Surname
         $FullName = $FullName.ToUpper()
         $LogonName = $FullName
         $Password = Specify-Password
-        $CombinedOU = "CN=Builtin,CN=Account Operators,"+$OU
+        $CombinedOU = "OU=AWS,OU=Tier 1,"+$OU
 
         # not real password
         $Description = "Just so I don't forget my password is c7y=emJWEQFMe"
 
-        New-ADUser -Name $FullName -GivenName $Firstname -Surname $Surname -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true
-        Get-ADPrincipalGroupMembership -Identity "BRANDEN_SALAS" | SELECT SamAccountName | ForEach-Object {Add-ADGroupMember -Identity $_.SamAccountName -Members $LogonName}
+        New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true
+        $GetGroups = Get-ADUser -Identity BRANDEN_SALAS -Properties memberof | Select-Object -ExpandProperty memberof
+        $GetGroups | Add-ADGroupMember -Members $FullName
 
         Write-Host "======================================="
         Write-Host
         Write-Host "Firstname:                   $Firstname"
-        Write-Host "Lastname:                      $Surname"
-        Write-Host "Display Name:                 $FullName"
+        Write-Host "Lastname:                    $Surname"
+        Write-Host "Display Name:                $FullName"
         Write-Host "Logon Name:                  $LogonName"
-        Write-Host "OU:                         $CombinedOU"
-        Write-Host "Domain:                         $Domain"
-        Write-Host "Password:                     $Password"
-        Write-Host "Credential - Not Expire:            Yes"
-        Write-Host "Pre-Authentication:                 Yes"
-        Write-Host "Enabled:                            Yes"
-        Write-Host "Auditing:                (Set Manually)"
+        Write-Host "OU:                          $CombinedOU"
+        Write-Host "Domain:                      $Domain"
+        Write-Host "Credential - Not Expire:     Yes"
+        Write-Host "Pre-Authentication:          Yes"
+        Write-Host "Enabled:                     Yes"
+        Write-Host "Auditing:                    (Set Manually)"
         Write-Host
     }
 }
 
 function Choose-Option {
+    <#
+    .DESCRIPTION
+    An interactive menu to the script.    
+    #>
+
     do {
         Show-Menu
         $option = Read-Host "Choose an option."
         switch ($option)
         {
             '1' {
-                Write-Host "test"
+                Create-Users
             } '2' {
                 Write-Host 'Author: E. Hastie'
-                Write-Host 'A script to insert honey users into an AD Badblood environment'
+                Write-Host 'Description: a script to insert honey users into an AD Badblood environment.'
             }
         }
         pause
     }
-    until ($option -eq 'q')
+    until ($option -eq 'q' -Or $option -eq 'Q')
 }
 
 Choose-Option
