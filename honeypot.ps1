@@ -3,7 +3,7 @@
 A script to insert honey users into the generated AD Badblood Environment, provided as part of dissertation work. 
 
 .DESCRIPTION
-Created using PowerShell, the script inserts 5 honey users using set variables.
+Created using PowerShell, the script inserts 4 honey users using set variables.
 
 Author: Ethan Hastie
 #>
