@@ -1,4 +1,4 @@
-# HoneypotAD
+# honeyAD
 
 Contains work completed for part of the dissertation. 
 
