@@ -37,7 +37,7 @@ function Specify-Password {
             https://thesysadminchannel.com/script-create-user-accounts-in-powershell/
     #>
 
-    # TOGGLE ME if password policy different
+    # TOGGLE ME - if password policy different
     $PasswordLength =         7
 
     do {
@@ -126,6 +126,7 @@ function Create-Users {
         Get-ADUser -Identity $FullName | Set-ADAccountControl -doesnotrequirepreauth $true
 
         # Copy group membership from user in Domain Admin Group to created user
+        # TOGGLE ME - replace user in '-Identity' switch
         $GetGroups = Get-ADUser -Identity JACKLYN_GONZALEZ -Properties memberof | Select-Object -ExpandProperty memberof
         $GetGroups | Add-ADGroupMember -Members $FullName
 
@@ -178,6 +179,7 @@ function Create-Users {
         # create user, as-rep vulnerable and copy group privileges from member in Administrators group
         New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
         Get-ADUser -Identity $FullName | Set-ADAccountControl -doesnotrequirepreauth $true
+        # TOGGLE ME - replace user in '-Identity' switch
         $GetGroups = Get-ADUser -Identity HOUSTON_LOWERY -Properties memberof | Select-Object -ExpandProperty memberof
         $GetGroups | Add-ADGroupMember -Members $FullName
         
@@ -228,6 +230,7 @@ function Create-Users {
         $CombinedOU = "OU=Test,OU=BDE,OU=Stage,"+$OU
 
         New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
+        # TOGGLE ME - replace user in '-Identity' switch
         $GetGroups = Get-ADUser -Identity SUSANNA_CAMPOS -Properties memberof | Select-Object -ExpandProperty memberof
         $GetGroups | Add-ADGroupMember -Members $FullName
 
@@ -276,6 +279,7 @@ function Create-Users {
 
         # create user and add to Account Operator by copying group privileges from other user
         New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true
+        # TOGGLE ME - replace user in '-Identity' switch
         $GetGroups = Get-ADUser -Identity BRANDEN_SALAS -Properties memberof | Select-Object -ExpandProperty memberof
         $GetGroups | Add-ADGroupMember -Members $FullName
 
