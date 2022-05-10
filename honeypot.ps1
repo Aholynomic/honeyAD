@@ -37,7 +37,7 @@ function Specify-Password {
             https://thesysadminchannel.com/script-create-user-accounts-in-powershell/
     #>
 
-    # TOGGLE ME
+    # TOGGLE ME if password policy different
     $PasswordLength =         7
 
     do {
@@ -47,7 +47,8 @@ function Specify-Password {
             $Password = Read-Host "Enter the Password " -AsSecureString
             $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
             $Complexity = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
- 
+
+            # as long as password meets 3 basic requirements and satisfies length requirements
             if ($Complexity.Length -ge $PasswordLength) {
                 Write-Host
             } else {
@@ -144,6 +145,11 @@ function Create-Users {
         Write-Host "Auditing:                    (Set Manually)"
         Write-Host "Deny Logon:                  (Set Manually)"
         Write-Host
+
+        # display properties of the created user
+        Write-Host "Account Created:"
+        Get-ADUser -Identity $FullName
+        Write-Host
     }
 
     ##############################################################################
@@ -169,6 +175,7 @@ function Create-Users {
         $Password = Specify-Password
         $CombinedOU = "OU=Tier 1,OU=Admin,"+$OU
 
+        # create user, as-rep vulnerable and copy group privileges from member in Administrators group
         New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true -PasswordNeverExpires $true
         Get-ADUser -Identity $FullName | Set-ADAccountControl -doesnotrequirepreauth $true
         $GetGroups = Get-ADUser -Identity HOUSTON_LOWERY -Properties memberof | Select-Object -ExpandProperty memberof
@@ -188,11 +195,15 @@ function Create-Users {
         Write-Host "Auditing:                    (Set Manually)"
         Write-Host "Deny Logon:                  (Set Manually)"
         Write-Host
+
+        Write-Host "Account Created:"
+        Get-ADUser -Identity $FullName
+        Write-Host
     }
 
     ##############################################################################
 
-    # create third user who has full rights to 'NORBERT_WARD' user in Domain Controllers group
+    # create third user who has interesting attack path to Domain Controllers group
     Write-Host 
     Write-Host "======== Third User Attributes ========="
     Write-Host "- Local User"
@@ -211,6 +222,8 @@ function Create-Users {
         $FullName = $FullName.ToUpper()
         $LogonName = $FullName
         $Password = Specify-Password
+
+        # add password into desc via GUI
         $Description = "Just so I don't forget my password is"
         $CombinedOU = "OU=Test,OU=BDE,OU=Stage,"+$OU
 
@@ -231,6 +244,10 @@ function Create-Users {
         Write-Host "Enabled:                     Yes"
         Write-Host "Auditing:                    (Set Manually)"
         Write-Host "Deny Logon:                  (Set Manually)"
+        Write-Host
+
+        Write-Host "Account Created:"
+        Get-ADUser -Identity $FullName
         Write-Host
     }
 
@@ -257,6 +274,7 @@ function Create-Users {
         # not real password
         $Description = "Just so I don't forget my password is c7y=emJWEQFMe"
 
+        # create user and add to Account Operator by copying group privileges from other user
         New-ADUser -Name $FullName -Surname $FullName -Description $Description -SamAccountName $LogonName -UserPrincipalName $LogonName@$Domain -DisplayName $FullName -Path $CombinedOU -AccountPassword $Password -Enabled $true
         $GetGroups = Get-ADUser -Identity BRANDEN_SALAS -Properties memberof | Select-Object -ExpandProperty memberof
         $GetGroups | Add-ADGroupMember -Members $FullName
@@ -273,6 +291,10 @@ function Create-Users {
         Write-Host "Pre-Authentication:          Yes"
         Write-Host "Enabled:                     Yes"
         Write-Host "Auditing:                    (Set Manually)"
+        Write-Host
+
+        Write-Host "Account Created:"
+        Get-ADUser -Identity $FullName
         Write-Host
     }
 }
